@@ -1,0 +1,36 @@
+spring:
+  spring:
+    jackson:
+      deserialization:
+        read-unknown-enum-values-as-null: false
+  application:
+    name: online-meal
+  datasource:
+    url: jdbc:mysql://localhost:3306/spring-employee-db?createDatabaseIfNotExist=true
+    username: ${USER_NAME}
+    password: ${PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+  main:
+    allow-circular-references: true
+  jwt:
+    secret: ${JWT_SECRET}
+    accessTokenExpiration: 900
+    refreshTokenExpiration: 604800
+  mvc:
+    view:
+      prefix: /
+server:
+  port: 5000
+  error:
+    include-stacktrace: never
+
+
