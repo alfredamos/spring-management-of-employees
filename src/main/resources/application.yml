@@ -4,7 +4,7 @@ spring:
       deserialization:
         read-unknown-enum-values-as-null: false
   application:
-    name: online-meal
+    name: employee-management
   datasource:
     url: jdbc:mysql://localhost:3306/spring-employee-db?createDatabaseIfNotExist=true
     username: ${USER_NAME}
@@ -22,7 +22,7 @@ spring:
   main:
     allow-circular-references: true
   jwt:
-    secret: ${JWT_SECRET}
+    secret: ${JWT_TOKEN_KEY}
     accessTokenExpiration: 900
     refreshTokenExpiration: 604800
   mvc:
