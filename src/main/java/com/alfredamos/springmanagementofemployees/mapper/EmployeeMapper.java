@@ -8,11 +8,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 
-@Getter
-@Setter
+@Data
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
 @Service
 public class EmployeeMapper {
    ////----> EmployeeDto -> Employee for updating of employee.

@@ -5,10 +5,14 @@ import com.alfredamos.springmanagementofemployees.dto.Signup;
 import com.alfredamos.springmanagementofemployees.dto.UserDto;
 import com.alfredamos.springmanagementofemployees.entities.Employee;
 import com.alfredamos.springmanagementofemployees.entities.User;
+import lombok.Builder;
+import lombok.Data;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 
+@Data
+@Builder
 @Service
 public class AuthMapper {
     public User toUserCreateEntity(Signup signup) {

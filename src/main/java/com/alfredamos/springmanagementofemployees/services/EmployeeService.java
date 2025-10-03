@@ -4,8 +4,8 @@ import com.alfredamos.springmanagementofemployees.dto.EmployeeDto;
 import com.alfredamos.springmanagementofemployees.entities.Employee;
 import com.alfredamos.springmanagementofemployees.exceptions.NotFoundException;
 import com.alfredamos.springmanagementofemployees.mapper.EmployeeMapper;
+import com.alfredamos.springmanagementofemployees.mapper.UserMapper;
 import com.alfredamos.springmanagementofemployees.repositories.EmployeeRepository;
-import com.alfredamos.springmanagementofemployees.repositories.UserRepository;
 import com.alfredamos.springmanagementofemployees.utils.ResponseMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,16 +18,20 @@ import java.util.UUID;
 @Service
 public class EmployeeService {
     private final EmployeeRepository employeeRepository;
-    private final UserRepository userRepository;
     private final EmployeeMapper employeeMapper;
+    private final UserService userService;
+    private final UserMapper userMapper;
 
     ////----> Delete employee by id method.
     public ResponseMessage deleteEmployeeById(UUID id) {
         //----> Fetch the employee with the given id.
-        getOneEmployerById(id);
+        var employee = getOneEmployerById(id);
 
         //----> Delete the employee with the given id.
         employeeRepository.deleteById(id);
+
+        //----> Delete the user associated with this employee.
+        userService.deleteUserById(employee.getId());
 
         //----> Send back response.
         return new ResponseMessage("Employee has been deleted successfully!", "success", HttpStatus.OK);
@@ -39,11 +43,10 @@ public class EmployeeService {
         var employee = getOneEmployerById(id);
 
         //----> Get the user associated with this employee.
-        var user = userRepository.findById(employee.getUser().getId()).orElseThrow(() -> new NotFoundException("User not found in the database!"));
+        var user = userService.getUserById(employee.getUser().getId());
 
         //----> Update employee with the given id.
-        employeeRepository.save(employeeMapper.toEmployeeEntity(employeeDto, user));
-
+        employeeRepository.save(employeeMapper.toEmployeeEntity(employeeDto, userMapper.toEntity(user)));
         //----> Send back response.
         return employeeDto;
     }
