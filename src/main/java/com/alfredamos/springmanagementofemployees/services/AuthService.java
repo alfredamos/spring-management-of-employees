@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -168,8 +169,8 @@ public class AuthService {
         var jwt = jwtService.parseToken(refreshToken);
 
         //----> Check the validity of jwt.
-        if (jwt == null) {
-            throw new UnAuthorizedException("Invalid refresh token!");
+        if(jwt == null){
+            throw new AuthenticationServiceException("Invalid JWT token");
         }
 
         //----> Get the authenticated user and revoke all valid tokens.

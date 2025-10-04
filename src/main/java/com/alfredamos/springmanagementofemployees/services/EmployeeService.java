@@ -7,10 +7,12 @@ import com.alfredamos.springmanagementofemployees.mapper.EmployeeMapper;
 import com.alfredamos.springmanagementofemployees.mapper.UserMapper;
 import com.alfredamos.springmanagementofemployees.repositories.EmployeeRepository;
 import com.alfredamos.springmanagementofemployees.utils.ResponseMessage;
+import com.alfredamos.springmanagementofemployees.utils.SameUserAndAdmin;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,6 +21,7 @@ import java.util.UUID;
 public class EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final EmployeeMapper employeeMapper;
+    private final SameUserAndAdmin sameUserAndAdmin;
     private final UserService userService;
     private final UserMapper userMapper;
 
@@ -27,11 +30,11 @@ public class EmployeeService {
         //----> Fetch the employee with the given id.
         var employee = getOneEmployerById(id);
 
-        //----> Delete the employee with the given id.
-        employeeRepository.deleteById(id);
+        //----> Only admin can delete an employee.
+        sameUserAndAdmin.checkForAdmin();
 
-        //----> Delete the user associated with this employee.
-        userService.deleteUserById(employee.getId());
+        //----> Delete the user and associated employee.
+        userService.deleteUserById(employee.getUser().getId());
 
         //----> Send back response.
         return new ResponseMessage("Employee has been deleted successfully!", "success", HttpStatus.OK);
@@ -42,11 +45,30 @@ public class EmployeeService {
         //----> Fetch employee with the given id.
         var employee = getOneEmployerById(id);
 
-        //----> Get the user associated with this employee.
-        var user = userService.getUserById(employee.getUser().getId());
+        //----> Only owner or admin can edit employee data.
+        sameUserAndAdmin.checkForOwnerShipOrAdmin(employee.getUser().getId());
 
-        //----> Update employee with the given id.
-        employeeRepository.save(employeeMapper.toEmployeeEntity(employeeDto, userMapper.toEntity(user)));
+        //----> Get the user associated with this employee.
+        var user = userService.fetchUser(employee.getUser().getId());
+
+        //----> Get the year of birth of the given employee.
+        var year = employeeDto.getDateOfBirth().getYear();
+
+        //----> Update employee fields.
+        employeeDto.setEmail(employee.getUser().getEmail());
+        employeeDto.setId(employee.getId());
+        employeeDto.setAge(LocalDate.now().getYear() -   (year != 0 ? year : employee.getDateOfBirth().getYear()));
+
+        //----> Save the edited employee data in the employee database.
+        var editedEmployee = employeeRepository.save(employeeMapper.toEmployeeEntity(employeeDto, user));
+
+        //----> Edit all related fields in user.
+        user.setName(editedEmployee.getName());
+        user.setImage(editedEmployee.getImage());
+
+        //----> Save the edited user data in the user database.
+        userService.editUserById(editedEmployee.getUser().getId(), userMapper.toDTO(user));
+
         //----> Send back response.
         return employeeDto;
     }
@@ -54,11 +76,20 @@ public class EmployeeService {
     ////----> Get one employee by id method.
     public EmployeeDto getEmployeeById(UUID id) {
         //----> Fetch employee by id.
-        return employeeMapper.toEmployeeDto(getOneEmployerById(id));
+        var employee = employeeMapper.toEmployeeDto(getOneEmployerById(id));
+
+        //----> Only owner and admin can retrieve employee detail.
+        sameUserAndAdmin.checkForOwnerShipOrAdmin(employee.getUserId());
+
+        //----> Send back the response.
+        return employee;
     }
 
     ////----> Get all employees' method.
     public List<EmployeeDto> getAllEmployees() {
+        //----> Only admin can retrieve all employees.
+        sameUserAndAdmin.checkForAdmin();
+
         //----> Fetch all employees from database.
         var employees = employeeRepository.findAll();
 
@@ -67,7 +98,8 @@ public class EmployeeService {
             throw new NotFoundException("Employees not found in the database!");
         }
 
-        return employees.stream().map(employee -> employeeMapper.toEmployeeDto(employee)).toList();
+        //----> Send back response.
+        return employees.stream().map(employeeMapper::toEmployeeDto).toList();
     }
 
     ////----> Get one employee by id method.

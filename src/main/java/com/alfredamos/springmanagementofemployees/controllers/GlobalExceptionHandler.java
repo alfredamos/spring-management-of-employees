@@ -2,6 +2,7 @@ package com.alfredamos.springmanagementofemployees.controllers;
 
 import com.alfredamos.springmanagementofemployees.exceptions.*;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.ServletException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -55,6 +57,14 @@ public class GlobalExceptionHandler {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorDetail);
         }
 
+        //System.out.println("Global exception handler" + ex.getMessage());
+        if (ex instanceof AuthenticationServiceException){
+            errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(401), ex.getMessage());
+            errorDetail.setProperty("description", "Jwt token must not be null!");
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorDetail);
+        }
+
         //----> Bad credentials.
         if (ex instanceof BadCredentialsException) {
             errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(401), ex.getMessage());
@@ -70,14 +80,6 @@ public class GlobalExceptionHandler {
             errorDetail.setProperty("description", "Invalid credentials");
 
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorDetail);
-        }
-
-        //----> Internal-authentication-service-exception.
-        if (ex instanceof InternalAuthenticationServiceException) {
-            errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(403), "Internal authentication issues with login credentials!");
-            errorDetail.setProperty("description", "Invalid credentials");
-
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorDetail);
         }
 
         //----> Authentication exception
@@ -147,6 +149,7 @@ public class GlobalExceptionHandler {
         }
 
         if (ex instanceof JwtException) {
+            System.out.println("I am in the right place!!!!!!");
             errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(500), ex.getMessage());
             errorDetail.setProperty("description", "Unknown internal server error.");
 

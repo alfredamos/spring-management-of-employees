@@ -2,6 +2,7 @@ package com.alfredamos.springmanagementofemployees.configs;
 
 import com.alfredamos.springmanagementofemployees.entities.Role;
 import com.alfredamos.springmanagementofemployees.filter.JwtAuthenticationFilter;
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -57,17 +58,13 @@ class SecurityConfig {
                     ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                     .exceptionHandling(c -> {
                         c.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
-                        c.accessDeniedHandler(((request, response, accessDeniedException) -> {
-                            response.setStatus(HttpStatus.FORBIDDEN.value());
-                        }));
+                        c.accessDeniedHandler(((request, response, accessDeniedException) -> response.setStatus(HttpStatus.FORBIDDEN.value())));
 
                     }).logout(logout -> //SecurityContextHolder.clearContext();
                             logout // Configure logout
                             .logoutUrl("/api/auth/logout")// The URL that triggers logout
-                            .addLogoutHandler(logoutService::logout)
-                            .logoutSuccessHandler((request, response, authentication) -> {
-                                        SecurityContextHolder.clearContext();
-                            })
+                            .addLogoutHandler(logoutService)
+                            .logoutSuccessHandler((request, response, authentication) -> SecurityContextHolder.clearContext())
                     );
 
 

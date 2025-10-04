@@ -1,11 +1,16 @@
 package com.alfredamos.springmanagementofemployees.configs;
 
 import com.alfredamos.springmanagementofemployees.repositories.TokenRepository;
+import com.alfredamos.springmanagementofemployees.services.Jwt;
 import com.alfredamos.springmanagementofemployees.utils.AuthParams;
+import com.alfredamos.springmanagementofemployees.utils.CookieParameter;
+import com.alfredamos.springmanagementofemployees.utils.ResponseMessage;
+import com.alfredamos.springmanagementofemployees.utils.SetCookie;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.stereotype.Service;
@@ -33,9 +38,15 @@ public class LogoutService implements LogoutHandler {
 
             tokenRepository.save(storedAccessToken.get());
         }
+
+        //----> Delete cookies
+        SetCookie.deleteCookie(AuthParams.accessToken, AuthParams.accessTokenPath, response);
+        SetCookie.deleteCookie(AuthParams.refreshToken, AuthParams.refreshTokenPath, response);
+
     }
 
     private String mySpecificCookieValue(Cookie[] cookies){
+        //----> Check for null cookies.
         if(cookies == null) return "";
 
         //----> Fetch access-token from cookies.
@@ -45,4 +56,5 @@ public class LogoutService implements LogoutHandler {
                 .findFirst().orElse(null);
 
     }
+
 }

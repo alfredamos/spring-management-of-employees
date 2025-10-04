@@ -1,9 +1,10 @@
 package com.alfredamos.springmanagementofemployees.filter;
 
+import com.alfredamos.springmanagementofemployees.exceptions.UnAuthorizedException;
 import com.alfredamos.springmanagementofemployees.services.JwtService;
 import com.alfredamos.springmanagementofemployees.utils.AuthParams;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,7 +19,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import com.alfredamos.springmanagementofemployees.services.UserAuthService;
 import com.alfredamos.springmanagementofemployees.repositories.TokenRepository;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -32,7 +32,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) {
         var accessCookies = request.getCookies(); //----> Get all cookies.
         var accessToken = mySpecificCookieValue(accessCookies); //----> Get access token
 
@@ -41,8 +41,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 
         //----> Check token only for non-public routes.
-        if(!publicRoutes().contains(requestURI)) {
+        if(!publicRoutes().contains(requestURI) && accessToken != null && !accessToken.isEmpty()) {
+            //----> Get the jwt token.
             var jwt = jwtService.parseToken(accessToken);
+
+            //----> Check the validity of jwt.
+            if(jwt == null || jwt.isExpired()) {
+                throw new JwtException("Invalid JWT token");
+            }
 
             var role = jwt.getUserRole(); //----> Get the role of the current user.
             var email = jwt.getUserEmail(); //----> Get the email of current user.
@@ -72,14 +78,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
+            try {
+                filterChain.doFilter(request, response);
+            }catch (Exception ex){
+               throw new UnAuthorizedException("You need to log in to access this resource");
+            }
 
-            filterChain.doFilter(request, response);
 
 
     }
 
-    private String mySpecificCookieValue(Cookie[] cookies){
-        if(cookies == null) return "";
+    private String mySpecificCookieValue(Cookie[] cookies) {
+        if(cookies == null || cookies.length == 0) return null;
 
         return Stream.of(cookies)
                 .filter(cookie -> cookie.getName().equals(AuthParams.accessToken))

@@ -33,8 +33,10 @@ public class Jwt {
     }
 
     public String toString(){
-        if (claims.isEmpty()){
+        if (claims.isEmpty()) try {
             throw new UnAuthorizedException("Invalid claims");
+        } catch (UnAuthorizedException e) {
+            throw new RuntimeException(e);
         }
         return Jwts.builder()
                 .claims(claims)

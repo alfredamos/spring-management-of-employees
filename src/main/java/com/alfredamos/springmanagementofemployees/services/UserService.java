@@ -32,11 +32,11 @@ public class UserService {
     ////----> Delete one user by id method.
     @Transactional
     public ResponseMessage deleteUserById(UUID id) {
+        //----> Only admin can delete user.
+        sameUserAndAdmin.checkForAdmin();
+
         //----> Check for existence of user.
         var user = fetchUser(id);
-
-        //----> Check for same user or admin privilege.
-        sameUserAndAdmin.checkForOwnerShipOrAdmin(user.getId());
 
         //----> Delete the employee with the given user.
         employeeRepository.deleteByUser(user);
@@ -72,8 +72,37 @@ public class UserService {
 
     }
 
+    ////----> Edit user method.
+    public User editUserById(UUID id, UserDto userDto) {
+        //----> Fetch the user with this id.
+        var user = fetchUser(id);
+
+        //----> Update user fields.
+        var updatedUserFields = updateUserFields(user, userDto);
+
+        //----> Edit user with the given id and send back response.
+        return userRepository.save(updatedUserFields);
+    }
+
     ////----> Fetch user by id and validate the existence of user.
-    private User fetchUser(UUID id) {
+    public User fetchUser(UUID id) {
         return userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not found in the database!"));
     }
+
+    ////----> Set user update.
+    private User updateUserFields(User user, UserDto userDto) {
+        //----> Mapped userDto to user.
+        var mappedUser = userMapper.toEntity(userDto);
+
+        //----> Update user field
+        mappedUser.setId(user.getId());
+        mappedUser.setPassword(user.getPassword());
+        mappedUser.setRole(user.getRole());
+        mappedUser.setEmail(user.getEmail());
+
+        //----> Set back response.
+        return mappedUser;
+    }
+
+
 }

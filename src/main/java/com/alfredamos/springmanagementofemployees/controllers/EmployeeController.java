@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -17,7 +16,7 @@ public class EmployeeController {
     private final EmployeeService employeeService;
 
     @GetMapping
-    public ResponseEntity<List<EmployeeDto>> getAllEmployees() {
+    public ResponseEntity<?> getAllEmployees() {
         return ResponseEntity.ok(employeeService.getAllEmployees());
     }
 

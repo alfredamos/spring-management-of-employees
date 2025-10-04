@@ -2,7 +2,6 @@ package com.alfredamos.springmanagementofemployees.services;
 
 import com.alfredamos.springmanagementofemployees.configs.JwtConfig;
 import com.alfredamos.springmanagementofemployees.entities.User;
-import com.alfredamos.springmanagementofemployees.exceptions.UnAuthorizedException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -26,7 +25,11 @@ public class JwtService {
 
     }
 
-    public Jwt parseToken(String token)throws JwtException {
+    public Jwt parseToken(String token) throws JwtException{
+        //----> Check for null or empty token.
+        if (token == null || token.isEmpty()) {
+            throw new JwtException("Invalid JWT token");
+        }
 
         var claims = getClaims(token);
 
@@ -47,7 +50,11 @@ public class JwtService {
         return new Jwt(claims, jwtConfig.getSecretKey());
     }
 
-    private Claims getClaims(String token) throws UnAuthorizedException {
+    private Claims getClaims(String token) throws JwtException {
+        //----> Check for null or empty token.
+        if (token == null || token.isEmpty()) {
+            throw new JwtException("Invalid JWT token");
+        }
 
         return Jwts.parser()
                 .verifyWith(jwtConfig.getSecretKey())

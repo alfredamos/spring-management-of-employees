@@ -4,6 +4,7 @@ import com.alfredamos.springmanagementofemployees.entities.Token;
 import com.alfredamos.springmanagementofemployees.exceptions.NotFoundException;
 import com.alfredamos.springmanagementofemployees.repositories.TokenRepository;
 import com.alfredamos.springmanagementofemployees.utils.ResponseMessage;
+import com.alfredamos.springmanagementofemployees.utils.SameUserAndAdmin;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TokenService {
     private final TokenRepository tokenRepository;
+    private final SameUserAndAdmin sameUserAndAdmin;
 
     ////----> Create new token function.
     public ResponseMessage createToken(Token token){
@@ -33,7 +35,9 @@ public class TokenService {
 
     ////----> Delete all invalid tokens
     public ResponseMessage deleteAllInvalidTokensByUserId(UUID userId){
-        System.out.println("In token-service, delete all invalid tokens, userId: " + userId);
+        //----> Only admin and owner can delete invalid tokens.
+        sameUserAndAdmin.checkForOwnerShipOrAdmin(userId);
+
         //----> Delete all invalid tokens.
         tokenRepository.deleteAllInvalidTokensByUserId(userId);
 
@@ -43,7 +47,9 @@ public class TokenService {
 
     ////----> Delete all invalid tokens
     public ResponseMessage deleteAllInvalidTokens(){
-        System.out.println("In token-service, delete all invalid tokens");
+        //----> Only admin can delete all invalid tokens for all users.
+        sameUserAndAdmin.checkForAdmin();
+
         //----> Delete all invalid tokens.
         tokenRepository.deleteAllInvalidTokens();
 
@@ -54,13 +60,25 @@ public class TokenService {
     ////----> Find token by access token.
     public Token findTokenByAccessToken(String accessToken){
         //----> Retrieve token object with the given access token and send back result.
-        return tokenRepository.findByAccessToken(accessToken).orElseThrow(() -> new NotFoundException("Token not found"));
+        var token = tokenRepository.findByAccessToken(accessToken).orElseThrow(() -> new NotFoundException("Token not found"));
+
+        //----> Only admin and owner can retrieve token.
+        sameUserAndAdmin.checkForOwnerShipOrAdmin(token.getUser().getId());
+
+        //----> Send back response,
+        return token;
     }
 
     ////----> Find token by access token.
     public Token findTokenByRefreshToken(String refreshToken){
         //----> Retrieve token object with the given refresh token and send back response.
-        return tokenRepository.findByRefreshToken(refreshToken).orElseThrow(() -> new NotFoundException("Token not found"));
+        var token = tokenRepository.findByRefreshToken(refreshToken).orElseThrow(() -> new NotFoundException("Token not found"));
+
+        //----> Only admin and owner can retrieve token.
+        sameUserAndAdmin.checkForOwnerShipOrAdmin(token.getUser().getId());
+
+        //----> Send back response.
+        return token;
     }
 
     ////----> Revoked all token by user-id function.
